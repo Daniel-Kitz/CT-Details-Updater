@@ -1,0 +1,22 @@
+{
+  "name": "ct-details-updater",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "extension",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "build": "npm run build -w @ct-details-updater/shared && npm run build -w @ct-details-updater/extension && npm run build -w @ct-details-updater/server",
+    "check": "npm run check -w @ct-details-updater/shared && npm run check -w @ct-details-updater/extension && npm run check -w @ct-details-updater/server",
+    "test": "node --experimental-strip-types --test shared/src/index.test.ts",
+    "dev:extension": "npm run build -w @ct-details-updater/shared && npm run dev -w @ct-details-updater/extension",
+    "server": "npm run start -w @ct-details-updater/server",
+    "deploy": "npm run build -w @ct-details-updater/shared && npm run deploy -w @ct-details-updater/extension"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
