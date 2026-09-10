@@ -26,6 +26,7 @@ Erweiterungsmodul. Die Erweiterung selbst erscheint als normaler Menüpunkt.
 ```text
 extension/  Vue-3-Erweiterung mit main- und admin-Einstieg
 server/     Reminder-Job für Node 22 und Docker
+songstats/  Eigenständige Website (Fastify + Vue 3) für Song-Nutzungsstatistiken
 shared/     Gemeinsame Typen, Defaults und Fälligkeitslogik
 ```
 
@@ -144,6 +145,52 @@ docker run --rm --env-file server/.env ct-details-updater
 Die Ausgabe besteht aus strukturierten JSON-Zeilen. Bei einzelnen
 Versandfehlern läuft der Job weiter und beendet sich anschließend mit Exit-Code
 1.
+
+## Song-Statistik-Website (`songstats`)
+
+Eine separate, eigenständig gehostete Website. Nutzer:innen melden sich mit
+ihrem eigenen ChurchTools-Konto an und suchen nach einem Songnamen. Angezeigt
+werden Trefferzahl und alle Vorkommen (Datum, Event, Kalender, Arrangement) im
+gewählten Zeitraum – standardmäßig die letzten drei Monate, wahlweise 1, 6 oder
+12 Monate sowie ein frei wählbarer Zeitraum.
+
+Die Site besteht aus einem schlanken Fastify-Backend und einer Vue-3-SPA. Das
+Backend proxyt den ChurchTools-Login, hält den Session-Cookie ausschließlich
+serverseitig und baut auf Anfrage einen Song-Nutzungsindex aus den Endpunkten
+`/api/events` und `/api/events/{id}/agenda` auf. Passwörter werden nie
+gespeichert. Der Index wird pro Sitzung und Zeitraum 15 Minuten zwischen­
+gespeichert; jede Nutzer:in sieht nur Events, die sie in ChurchTools sehen darf.
+
+### Lokale Entwicklung
+
+```bash
+cp songstats/.env.example songstats/.env
+npm run dev:songstats
+```
+
+In `songstats/.env` mindestens `CHURCHTOOLS_BASE_URL` (ohne `/api`) und ein
+mindestens 32 Zeichen langes `SESSION_SECRET` setzen. In HTTP-Dev-Umgebungen
+zusätzlich `COOKIE_SECURE=false`. Der Dev-Server startet das Fastify-Backend
+sowie Vite parallel; Vite leitet `/api` und `/auth` an das Backend weiter.
+
+### Produktion / Container
+
+```bash
+npm run build -w @ct-details-updater/shared
+npm run build -w @ct-details-updater/songstats
+CHURCHTOOLS_BASE_URL=https://deine-gemeinde.church.tools \
+SESSION_SECRET=... \
+npm run songstats
+```
+
+Oder als Container:
+
+```bash
+docker build -f songstats/Dockerfile -t ct-songstats .
+docker run --rm -p 5175:5175 --env-file songstats/.env ct-songstats
+```
+
+Der Container serviert Backend und SPA auf demselben Port (Default `5175`).
 
 ## Datenschutz und Betrieb
 

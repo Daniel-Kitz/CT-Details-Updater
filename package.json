@@ -6,14 +6,17 @@
   "workspaces": [
     "extension",
     "server",
-    "shared"
+    "shared",
+    "songstats"
   ],
   "scripts": {
-    "build": "npm run build -w @ct-details-updater/shared && npm run build -w @ct-details-updater/extension && npm run build -w @ct-details-updater/server",
-    "check": "npm run check -w @ct-details-updater/shared && npm run check -w @ct-details-updater/extension && npm run check -w @ct-details-updater/server",
+    "build": "npm run build -w @ct-details-updater/shared && npm run build -w @ct-details-updater/extension && npm run build -w @ct-details-updater/server && npm run build -w @ct-details-updater/songstats",
+    "check": "npm run check -w @ct-details-updater/shared && npm run check -w @ct-details-updater/extension && npm run check -w @ct-details-updater/server && npm run check -w @ct-details-updater/songstats",
     "test": "node --experimental-strip-types --test shared/src/index.test.ts",
     "dev:extension": "npm run build -w @ct-details-updater/shared && npm run dev -w @ct-details-updater/extension",
+    "dev:songstats": "npm run build -w @ct-details-updater/shared && npm run dev -w @ct-details-updater/songstats",
     "server": "npm run start -w @ct-details-updater/server",
+    "songstats": "npm run start -w @ct-details-updater/songstats",
     "deploy": "npm run build -w @ct-details-updater/shared && npm run deploy -w @ct-details-updater/extension"
   },
   "engines": {

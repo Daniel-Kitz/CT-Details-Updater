@@ -4,6 +4,7 @@ COPY package*.json ./
 COPY extension/package.json extension/package.json
 COPY server/package.json server/package.json
 COPY shared/package.json shared/package.json
+COPY songstats/package.json songstats/package.json
 RUN npm ci
 COPY shared shared
 COPY server server
@@ -16,6 +17,7 @@ COPY package*.json ./
 COPY extension/package.json extension/package.json
 COPY server/package.json server/package.json
 COPY shared/package.json shared/package.json
+COPY songstats/package.json songstats/package.json
 RUN npm ci --omit=dev --workspace @ct-details-updater/server --workspace @ct-details-updater/shared
 COPY --from=build /app/server/dist server/dist
 COPY --from=build /app/shared/dist shared/dist

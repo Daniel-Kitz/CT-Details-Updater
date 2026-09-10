@@ -5,6 +5,10 @@ import {
   effectiveVerificationDate,
   interpolateTemplate,
   isPersonOverdue,
+  isValidRange,
+  normalizeSongName,
+  rangeForMonths,
+  songMatchesQuery,
   type PersonRecord,
 } from './index.ts';
 
@@ -81,5 +85,37 @@ test('interpolates known placeholders and preserves unknown ones', () => {
       firstName: 'Maria',
     }),
     'Hallo Maria – {{unknown}}',
+  );
+});
+
+test('normalizes song titles for matching', () => {
+  assert.equal(normalizeSongName('Großer Gott, wir loben Dich!'), 'grosser gott wir loben dich');
+  assert.equal(normalizeSongName('  10.000 Reasons  '), '10 000 reasons');
+});
+
+test('matches partial and diacritic-insensitive queries', () => {
+  assert.equal(songMatchesQuery('Herr, deine Liebe', 'liebe'), true);
+  assert.equal(songMatchesQuery('Herr, deine Liebe', 'LIEBE!!'), true);
+  assert.equal(songMatchesQuery('Herr, deine Liebe', 'Grösster'), false);
+  assert.equal(songMatchesQuery('Herr, deine Liebe', ''), false);
+});
+
+test('builds a month range ending today', () => {
+  const now = new Date('2026-08-17T12:00:00Z');
+  const range = rangeForMonths(3, now);
+  assert.equal(range.to, '2026-08-17');
+  assert.equal(range.from, '2026-05-17');
+});
+
+test('rejects invalid or oversized ranges', () => {
+  assert.equal(
+    isValidRange({ from: '2026-05-01', to: '2026-08-01' }, 24),
+    true,
+  );
+  assert.equal(isValidRange({ from: '2026-08-01', to: '2026-05-01' }, 24), false);
+  assert.equal(isValidRange({ from: 'nope', to: '2026-05-01' }, 24), false);
+  assert.equal(
+    isValidRange({ from: '2020-01-01', to: '2026-01-01' }, 24),
+    false,
   );
 });

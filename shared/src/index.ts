@@ -1,3 +1,5 @@
+export * from './songs.ts';
+
 export const EXTENSION_KEY = 'ct-details-updater';
 export const SETTINGS_CATEGORY = 'settings';
 export const REMINDERS_CATEGORY = 'reminders';
