@@ -13,6 +13,7 @@ import type { Config } from '../config.js';
 import type { SessionStore } from '../sessions.js';
 import { getSessionFromRequest } from './auth.js';
 import { ensureUsageIndex } from '../song-index.js';
+import type { MonthlyUsageCache } from '../monthly-cache.js';
 
 const weekdaysSchema = z
   .string()
@@ -56,6 +57,7 @@ const suggestQuerySchema = z.object({
 interface SongsDeps {
   config: Config;
   sessions: SessionStore;
+  monthlyCache: MonthlyUsageCache;
 }
 
 export async function registerSongRoutes(
@@ -82,11 +84,18 @@ export async function registerSongRoutes(
       return reply.code(400).send({ error: 'invalid_range' });
     }
 
-    const entry = await ensureUsageIndex(
-      session,
-      { from: range.from, to: range.to, weekdays: parsed.data.weekdays },
-      { config, logger: request.log },
-    );
+    const entry =
+      (deps.monthlyCache.canServe(
+        parsed.data.months,
+        parsed.data.weekdays,
+      )
+        ? await deps.monthlyCache.getSixMonthSundayIndex()
+        : null) ??
+      (await ensureUsageIndex(
+        session,
+        { from: range.from, to: range.to, weekdays: parsed.data.weekdays },
+        { config, logger: request.log },
+      ));
 
     deps.sessions.extend(session);
 
@@ -105,7 +114,7 @@ export async function registerSongRoutes(
     const limited = matches.slice(0, parsed.data.limit);
 
     const response: SongUsageResponse = {
-      range,
+      range: { from: entry.from, to: entry.to },
       totalEvents: entry.index.totalEvents,
       matches: limited,
     };
@@ -122,11 +131,18 @@ export async function registerSongRoutes(
     }
 
     const range = rangeForMonths(parsed.data.months);
-    const entry = await ensureUsageIndex(
-      session,
-      { from: range.from, to: range.to, weekdays: parsed.data.weekdays },
-      { config, logger: request.log },
-    );
+    const entry =
+      (deps.monthlyCache.canServe(
+        parsed.data.months,
+        parsed.data.weekdays,
+      )
+        ? await deps.monthlyCache.getSixMonthSundayIndex()
+        : null) ??
+      (await ensureUsageIndex(
+        session,
+        { from: range.from, to: range.to, weekdays: parsed.data.weekdays },
+        { config, logger: request.log },
+      ));
 
     const normalizedQuery = normalizeSongName(parsed.data.q);
     if (normalizedQuery === '') {

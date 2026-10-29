@@ -9,6 +9,7 @@ import { loadConfig } from './config.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerSongRoutes } from './routes/songs.js';
 import { SessionStore } from './sessions.js';
+import { MonthlyUsageCache } from './monthly-cache.js';
 
 const config = loadConfig();
 const sessions = new SessionStore(config);
@@ -16,12 +17,15 @@ const sessions = new SessionStore(config);
 const app = Fastify({
   logger: { level: config.LOG_LEVEL },
 });
+const monthlyCache = new MonthlyUsageCache(config, app.log);
+await monthlyCache.start();
 
 await app.register(cookie, { secret: config.SESSION_SECRET });
 await app.register(rateLimit, { global: false });
 
 await registerAuthRoutes(app, { config, sessions });
-await registerSongRoutes(app, { config, sessions });
+await registerSongRoutes(app, { config, sessions, monthlyCache });
+app.addHook('onClose', async () => monthlyCache.stop());
 
 app.get('/healthz', async () => ({ status: 'ok' }));
 

@@ -29,17 +29,8 @@ interface RawAgendaItem {
   } | null;
 }
 
-interface PageMeta {
-  currentPage?: number;
-  lastPage?: number;
-  totalPages?: number;
-  count?: number;
-  perPage?: number;
-}
-
 interface Page<T> {
   data: T[];
-  meta?: { pagination?: PageMeta };
 }
 
 export interface UsageIndex {
@@ -47,36 +38,16 @@ export interface UsageIndex {
   songs: Map<number, SongUsage>;
 }
 
-async function fetchAllPages<T>(
+async function fetchEventRange<T>(
   client: ChurchToolsClient,
   path: string,
   query: URLSearchParams,
-  limit = 100,
 ): Promise<T[]> {
-  const results: T[] = [];
-  let page = 1;
-  while (true) {
-    const params = new URLSearchParams(query);
-    params.set('page', String(page));
-    params.set('limit', String(limit));
-    const response = await client.request<Page<T> | T[]>(`${path}?${params}`);
-    const body: Page<T> = Array.isArray(response)
-      ? { data: response }
-      : (response as Page<T>);
-    const items = body.data ?? [];
-    results.push(...items);
-    const meta = body.meta?.pagination;
-    const lastPage = meta?.lastPage ?? meta?.totalPages;
-    if (
-      items.length === 0 ||
-      (lastPage !== undefined && page >= lastPage) ||
-      (lastPage === undefined && items.length < limit)
-    ) {
-      break;
-    }
-    page += 1;
-  }
-  return results;
+  // ChurchTools returns date-range event queries unpaginated. In this mode it
+  // explicitly ignores page and limit, so pagination would repeatedly fetch
+  // the same complete range whenever it contains 100 or more events.
+  const response = await client.request<Page<T> | T[]>(`${path}?${query}`);
+  return Array.isArray(response) ? response : (response.data ?? []);
 }
 
 function pickCalendar(event: RawEvent): { id: number | null; name: string | null } {
@@ -161,7 +132,7 @@ export async function buildUsageIndex(
 ): Promise<UsageIndex> {
   const { from, to, concurrency, weekdays, logger } = options;
   const query = new URLSearchParams({ from, to });
-  const events = await fetchAllPages<RawEvent>(client, '/events', query, 100);
+  const events = await fetchEventRange<RawEvent>(client, '/events', query);
 
   const activeEvents = events.filter(
     (event) => !(event.isCanceled ?? event.canceled),

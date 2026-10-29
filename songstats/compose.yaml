@@ -1,0 +1,22 @@
+services:
+  songstats:
+    image: ghcr.io/daniel-kitz/ct-details-updater-songstats:latest
+    container_name: churchtools-songstats
+    restart: unless-stopped
+    init: true
+    ports:
+      - "5175:5175"
+    environment:
+      CHURCHTOOLS_BASE_URL: ${CHURCHTOOLS_BASE_URL}
+      CHURCHTOOLS_LOGIN_TOKEN: ${CHURCHTOOLS_LOGIN_TOKEN}
+      SESSION_SECRET: ${SESSION_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      AGENDA_CONCURRENCY: ${AGENDA_CONCURRENCY:-5}
+      MONTHLY_CACHE_FILE: /data/songstats-cache.json
+      MONTHLY_CACHE_CHECK_MINUTES: ${MONTHLY_CACHE_CHECK_MINUTES:-60}
+    volumes:
+      - songstats-data:/data
+
+volumes:
+  songstats-data:

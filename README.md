@@ -152,14 +152,17 @@ Eine separate, eigenständig gehostete Website. Nutzer:innen melden sich mit
 ihrem eigenen ChurchTools-Konto an und suchen nach einem Songnamen. Angezeigt
 werden Trefferzahl und alle Vorkommen (Datum, Event, Kalender, Arrangement) im
 gewählten Zeitraum – standardmäßig die letzten drei Monate, wahlweise 1, 6 oder
-12 Monate sowie ein frei wählbarer Zeitraum.
+12 Monate sowie ein frei wählbarer Zeitraum. Standardmäßig werden nur Sonntage
+berücksichtigt.
 
 Die Site besteht aus einem schlanken Fastify-Backend und einer Vue-3-SPA. Das
 Backend proxyt den ChurchTools-Login, hält den Session-Cookie ausschließlich
 serverseitig und baut auf Anfrage einen Song-Nutzungsindex aus den Endpunkten
 `/api/events` und `/api/events/{id}/agenda` auf. Passwörter werden nie
 gespeichert. Der Index wird pro Sitzung und Zeitraum 15 Minuten zwischen­
-gespeichert; jede Nutzer:in sieht nur Events, die sie in ChurchTools sehen darf.
+gespeichert. Zusätzlich wird der Sechs-Monats-Index für Sonntage mit einem
+technischen Benutzer monatlich vorberechnet und persistent gespeichert. Dieser
+gemeinsame Index enthält die Events, die der technische Benutzer sehen darf.
 
 ### Lokale Entwicklung
 
@@ -172,6 +175,7 @@ In `songstats/.env` mindestens `CHURCHTOOLS_BASE_URL` (ohne `/api`) und ein
 mindestens 32 Zeichen langes `SESSION_SECRET` setzen. In HTTP-Dev-Umgebungen
 zusätzlich `COOKIE_SECURE=false`. Der Dev-Server startet das Fastify-Backend
 sowie Vite parallel; Vite leitet `/api` und `/auth` an das Backend weiter.
+Für den monatlichen Cache außerdem `CHURCHTOOLS_LOGIN_TOKEN` setzen.
 
 ### Produktion / Container
 
@@ -183,14 +187,17 @@ SESSION_SECRET=... \
 npm run songstats
 ```
 
-Oder als Container:
+Das fertige Image wird über GitHub Container Registry veröffentlicht:
 
-```bash
-docker build -f songstats/Dockerfile -t ct-songstats .
-docker run --rm -p 5175:5175 --env-file songstats/.env ct-songstats
+```text
+ghcr.io/daniel-kitz/ct-details-updater-songstats:latest
 ```
 
-Der Container serviert Backend und SPA auf demselben Port (Default `5175`).
+Der Container serviert Backend und SPA auf demselben Port (Default `5175`) und
+speichert den Monatscache in einem Docker-Volume. Eine vollständige
+Portainer-Anleitung und ein fertiger Stack stehen in
+[`songstats/README.md`](songstats/README.md) und
+[`songstats/compose.yaml`](songstats/compose.yaml).
 
 ## Datenschutz und Betrieb
 
